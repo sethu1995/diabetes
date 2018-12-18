@@ -1,0 +1,70 @@
+# Libraries
+
+library(naivebayes)
+library(dplyr)
+library(ggplot2)
+library(psych)
+
+# Data
+
+data <- read.csv(file.choose(), header = T)
+str(data)
+xtabs(~Outcome, data = data)
+
+#converting into factor
+
+data$Outcome <- as.factor(data$Outcome)
+
+#removing insulin values with 0
+
+g<-data[-(which(data$Insulin==0)),]
+
+xtabs(~g$Outcome, data = data)
+
+g$Outcome<-factor(g$Outcome,levels=c(0,1),labels = c("N","y"))
+g
+
+# Data Partition
+set.seed(123456789)
+ind <- sample(2, nrow(g), replace = T, prob = c(0.8, 0.2))
+train <- g[ind == 1,]
+test <- g[ind == 2,]
+
+
+
+# Naive Bayes Model
+model <- naive_bayes(Outcome~ ., data = train, usekernel = T)
+model
+
+summary(model)
+#train %>%
+        # filter(admit == "1") %>%
+         #summarise(mean(gre), sd(gre))
+
+plot(model)
+
+# Predict
+p <- predict(model, train, type = 'prob')
+head(cbind(p, train))
+
+# Confusion Matrix - train data
+p1 <- predict(model, train)
+(tab1 <- table(p1, train$Outcome))
+#sum(tab1)
+
+1 - sum(diag(tab1)) / sum(tab1)
+
+# Confusion Matrix - test data
+p2 <- predict(model, test)
+(tab2 <- table(p2, test$Outcome))
+1 - sum(diag(tab2)) / sum(tab2)
+
+y_pred<-predict(model,newdata=data.frame(Pregnancies=6,
+                                         Glucose=140,
+                                         BloodPressure=40,
+                                         SkinThickness=35,
+                                         Insulin=300,
+                                         BMI=35.1,
+                                         DiabetesPedigreeFunction=0.91,
+                                         Age=40
+                                         ))
