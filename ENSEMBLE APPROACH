@@ -1,0 +1,118 @@
+library(mlbench)
+library(caret)
+library(e1071)
+
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+# CART
+set.seed(7)
+#fit.cart <- train(Outcome~., data=g, method="rpart", trControl=control)
+# LDA
+set.seed(7)
+#fit.lda <- train(Outcome~., data=g, method="lda", trControl=control)
+# SVM
+set.seed(7)
+#fit.svm <- train(Outcome~., data=g, method="svmRadial", trControl=control)
+# kNN
+set.seed(7)
+fit.knn <- train(Outcome~., data=g, method="knn", trControl=control,tuneLength=3)
+# Random Forest
+set.seed(7)
+fit.rf <- train(Outcome~., data=g, method="rf", trControl=control,tuneLength=3)
+set.seed(7)
+fit.lr <- train(Outcome~., data=g, method="glm", trControl=control,tuneLength=3)
+# collect resamples
+results <- resamples(list(KNN=fit.knn, RF=fit.rf,LR=fit.lr))
+results
+summary(results)
+
+# box and whisker plots to compare models
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+bwplot(results, scales=scales)
+
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+densityplot(results, scales=scales, pch = "|")
+
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+dotplot(results, scales=scales)
+
+parallelplot(results)
+
+splom(results)
+
+# xyplot plots to compare models
+xyplot(results, models=c("KNN","RF"))
+
+diffs <- diff(results)
+summary(diffs)
+
+#individual Random Forest Approach
+fitControl <- trainControl(
+  method = "cv",
+  number = 5,
+  savePredictions = 'final',
+  classProbs = T)
+
+#Defining the predictors and outcome
+predictors<-c("Pregnancies","Glucose","BloodPressure","SkinThickness","Insulin","BMI",
+              "DiabetesPedigreeFunction","Age")
+outcomeName<-'Outcome'
+
+str(g)
+
+model_rf<-train(train[,predictors],train[,outcomeName],method='rf',trControl=fitControl,tuneLength=3)
+
+
+test$pred_rf<-predict(object = model_rf,test[,predictors])
+
+confusionMatrix(test$Outcome,test$pred_rf)
+
+
+y_pred<-predict(model_rf,newdata=data.frame(Pregnancies=6,
+                                             Glucose=140,
+                                             BloodPressure=40,
+                                             SkinThickness=35,
+                                             Insulin=300,
+                                             BMI=35.1,
+                                             DiabetesPedigreeFunction=0.91,
+                                             Age=40
+))
+y_pred
+
+#Training the knn model
+model_knn<-train(train[,predictors],train[,outcomeName],method='knn',trControl=fitControl,tuneLength=3)
+
+test$pred_knn<-predict(object = model_knn,test[,predictors])
+
+confusionMatrix(test$Outcome,test$pred_knn)
+
+y_pred<-predict(model_knn,newdata=data.frame(Pregnancies=6,
+                                            Glucose=140,
+                                            BloodPressure=40,
+                                            SkinThickness=35,
+                                            Insulin=300,
+                                            BMI=35.1,
+                                            DiabetesPedigreeFunction=0.91,
+                                            Age=40
+))
+y_pred
+
+
+
+#Training Logestic Regression Model
+model_lr<-train(train[,predictors],train[,outcomeName],method='glm',trControl=fitControl,tuneLength=3)
+
+test$pred_lr<-predict(object = model_lr,test[,predictors])
+
+confusionMatrix(test$Outcome,test$pred_lr)
+
+
+y_pred<-predict(model_lr,newdata=data.frame(Pregnancies=6,
+                                         Glucose=140,
+                                         BloodPressure=40,
+                                         SkinThickness=35,
+                                         Insulin=300,
+                                         BMI=35.1,
+                                         DiabetesPedigreeFunction=0.91,
+                                         Age=40))
+
+	
